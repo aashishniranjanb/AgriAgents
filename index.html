@@ -1,0 +1,478 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <title>AgriAgents – Multi-Agent Irrigation AI</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <style>
+    :root {
+      --bg: #f8fafc;
+      --card: #ffffff;
+      --border: #e2e8f0;
+      --text: #0f172a;
+      --muted: #64748b;
+
+      --field: #3b82f6;
+      --climate: #0ea5e9;
+      --decision: #16a34a;
+      --warn: #dc2626;
+    }
+
+    body {
+      margin: 0;
+      padding: 24px;
+      background: var(--bg);
+      font-family: system-ui, -apple-system, Segoe UI, Roboto;
+      color: var(--text);
+    }
+
+    header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 20px;
+    }
+
+    h1 {
+      margin: 0;
+      font-size: 1.6rem;
+    }
+
+    .badge {
+      background: #dcfce7;
+      color: #166534;
+      padding: 6px 12px;
+      border-radius: 999px;
+      font-size: 0.75rem;
+      font-weight: 600;
+    }
+
+    .controls {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 24px;
+    }
+
+    button {
+      padding: 8px 14px;
+      border-radius: 8px;
+      border: 1px solid var(--border);
+      background: white;
+      cursor: pointer;
+      font-weight: 600;
+    }
+
+    button:hover {
+      background: #f1f5f9;
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 20px;
+    }
+
+    .card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 20px;
+    }
+
+    .card h3 {
+      margin: 0 0 12px 0;
+      font-size: 0.8rem;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+      color: var(--muted);
+    }
+
+    .value {
+      font-size: 1.8rem;
+      font-weight: 700;
+    }
+
+    .sub {
+      font-size: 0.9rem;
+      color: var(--muted);
+    }
+
+    .decision-card {
+      grid-column: 1 / -1;
+      border: 2px solid var(--decision);
+    }
+
+    .decision {
+      font-size: 2.6rem;
+      font-weight: 900;
+      color: var(--decision);
+    }
+
+    .assistant {
+      background: #f1f5f9;
+      border-left: 4px solid var(--field);
+      padding: 16px;
+      border-radius: 10px;
+      font-size: 0.95rem;
+      line-height: 1.5;
+    }
+
+    /* ================= AGENT INTERACTION FLOW ================= */
+    .flow {
+      margin-top: 30px;
+      padding: 20px;
+      background: #ffffff;
+      border: 1px dashed var(--border);
+      border-radius: 14px;
+    }
+
+    .flow-title {
+      font-size: 0.8rem;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      margin-bottom: 14px;
+    }
+
+    .flow-track {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .agent-node {
+      text-align: center;
+      font-weight: 600;
+    }
+
+    .agent-node span {
+      display: block;
+      font-size: 0.75rem;
+      color: var(--muted);
+    }
+
+    .flow-arrow {
+      font-size: 1.6rem;
+      transition: color 0.4s ease;
+    }
+
+    .flow-ok {
+      color: #16a34a;
+    }
+
+    .flow-warn {
+      color: #f59e0b;
+    }
+
+    .flow-block {
+      color: #dc2626;
+    }
+
+    /* ================= IMPACT METRICS ================= */
+    .impact {
+      grid-column: 1 / -1;
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 16px;
+      margin-top: 20px;
+    }
+
+    .impact-card {
+      background: #ecfeff;
+      border: 1px solid #bae6fd;
+      border-radius: 14px;
+      padding: 20px;
+      text-align: center;
+    }
+
+    .impact-value {
+      font-size: 2.2rem;
+      font-weight: 900;
+      color: #0369a1;
+    }
+
+    .impact-label {
+      font-size: 0.85rem;
+      color: #075985;
+      margin-top: 6px;
+    }
+
+    /* ================= TIMELINE ================= */
+    .timeline {
+      margin-top: 20px;
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      background: #ffffff;
+      padding: 20px;
+    }
+
+    .timeline-title {
+      font-size: 0.85rem;
+      color: var(--muted);
+      letter-spacing: 1px;
+      text-transform: uppercase;
+      margin-bottom: 12px;
+    }
+
+    .timeline-list {
+      max-height: 200px;
+      overflow-y: auto;
+    }
+
+    .timeline-item {
+      border-left: 4px solid #e5e7eb;
+      padding: 10px 12px;
+      margin-bottom: 10px;
+      font-size: 0.85rem;
+    }
+
+    .timeline-item.IRRIGATE {
+      border-color: #16a34a;
+    }
+
+    .timeline-item.HOLD {
+      border-color: #0ea5e9;
+    }
+
+    .timeline-item.EMERGENCY_STOP {
+      border-color: #dc2626;
+    }
+
+    .timeline-time {
+      font-size: 0.75rem;
+      color: var(--muted);
+      margin-bottom: 4px;
+    }
+  </style>
+</head>
+
+<body>
+
+  <header>
+    <h1>🌱 AgriAgents – Multi-Agent Irrigation AI</h1>
+    <div class="badge">SYSTEM ONLINE</div>
+  </header>
+
+  <!-- SCENARIO CONTROLS -->
+  <div class="controls">
+    <button onclick="setScenario('NORMAL')">💧 Normal</button>
+    <button onclick="setScenario('RAIN')">🌧️ Rain Incoming</button>
+    <button onclick="setScenario('PUMP_FAIL')">⚠️ Pump Failure</button>
+  </div>
+
+  <div class="grid">
+
+    <!-- FIELD AGENT -->
+    <div class="card">
+      <h3>🟫 Field Agent</h3>
+      <div class="value" id="soil">--%</div>
+      <div class="sub" id="soil_status">Soil status: --</div>
+      <div class="sub" id="temp">Temperature: -- °C</div>
+      <div class="sub" id="pump">Pump: --</div>
+    </div>
+
+    <!-- CLIMATE AGENT -->
+    <div class="card">
+      <h3>🌦️ Climate Agent</h3>
+      <div class="value" id="rain">--</div>
+      <div class="sub" id="eta">Rain ETA: --</div>
+      <div class="sub" id="evap">Evaporation Risk: --</div>
+    </div>
+
+    <!-- DECISION AGENT -->
+    <div class="card decision-card">
+      <h3>🧠 Decision Agent</h3>
+      <div class="decision" id="decision">WAITING</div>
+      <div class="sub">Confidence: <span id="confidence">--%</span></div>
+      <div class="sub">Utility Score: <span id="utility">--</span></div>
+      <div class="sub" id="reason">Reason: --</div>
+    </div>
+
+    <!-- FARMER ASSISTANT -->
+    <div class="card">
+      <h3>🧑‍🌾 Farmer Assistant (AI)</h3>
+      <div class="assistant" id="assistant">
+        Waiting for insights…
+      </div>
+    </div>
+
+  </div>
+
+  <!-- AGENT INTERACTION FLOW -->
+  <div class="flow">
+    <div class="flow-title">🔗 Agent Interaction & Reasoning Flow</div>
+
+    <div class="flow-track">
+      <div class="agent-node">
+        🟫 Field Agent
+        <span id="flow-field">--</span>
+      </div>
+
+      <div id="arrow-field-climate" class="flow-arrow">➜</div>
+
+      <div class="agent-node">
+        🌦️ Climate Agent
+        <span id="flow-climate">--</span>
+      </div>
+
+      <div id="arrow-climate-decision" class="flow-arrow">➜</div>
+
+      <div class="agent-node">
+        🧠 Decision Agent
+        <span id="flow-decision">--</span>
+      </div>
+
+      <div id="arrow-decision-farmer" class="flow-arrow">➜</div>
+
+      <div class="agent-node">
+        🧑‍🌾 Farmer Assistant
+        <span>Explanation</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- IMPACT METRICS -->
+  <div class="impact">
+    <div class="impact-card">
+      <div class="impact-value" id="water-saved">0 L</div>
+      <div class="impact-label">💧 Water Saved</div>
+    </div>
+
+    <div class="impact-card">
+      <div class="impact-value" id="cycles-avoided">0</div>
+      <div class="impact-label">🔁 Pump Cycles Avoided</div>
+    </div>
+  </div>
+
+  <!-- TIMELINE REPLAY -->
+  <div class="timeline">
+    <div class="timeline-title">🕒 Decision Timeline (Replay)</div>
+    <div class="timeline-list" id="timeline"></div>
+  </div>
+
+  <script>
+    let API = localStorage.getItem("agro_api") || "http://localhost:5000";
+
+    function setScenario(mode) {
+      fetch(API + "/scenario", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ mode })
+      });
+    }
+
+    async function update() {
+      try {
+        const res = await fetch(API + "/state");
+        const data = await res.json();
+        if (!data.agents || !data.agents.field_agent) return;
+
+        const field = data.agents.field_agent;
+        const climate = data.agents.climate_agent;
+        const decisionA = data.agents.decision_agent;
+        const farmer = data.agents.farmer_assistant;
+
+        // FIELD AGENT
+        document.getElementById("soil").innerText = field.soil_moisture + "%";
+        document.getElementById("soil_status").innerText = "Soil status: " + field.soil_status;
+        document.getElementById("temp").innerText = "Temperature: " + field.temperature + " °C";
+        document.getElementById("pump").innerText = "Pump: " + field.pump_state;
+
+        // CLIMATE AGENT
+        document.getElementById("rain").innerText = climate.rain_expected ? "🌧️ YES" : "☀️ NO";
+        document.getElementById("eta").innerText = climate.rain_expected
+          ? "Rain ETA: " + (climate.rain_eta_minutes || 0) + " min"
+          : "Rain ETA: None";
+        document.getElementById("evap").innerText = "Evaporation Risk: " + climate.evaporation_risk;
+
+        // DECISION AGENT
+        document.getElementById("decision").innerText = decisionA.decision;
+        document.getElementById("confidence").innerText = Math.round(decisionA.confidence * 100) + "%";
+        document.getElementById("utility").innerText = decisionA.utility_score;
+        document.getElementById("reason").innerText = "Reason: " + decisionA.reason;
+
+        // FARMER ASSISTANT
+        document.getElementById("assistant").innerText = farmer.message;
+
+        // ================= AGENT INTERACTION LOGIC =================
+        const arrowFieldClimate = document.getElementById("arrow-field-climate");
+        const arrowClimateDecision = document.getElementById("arrow-climate-decision");
+        const arrowDecisionFarmer = document.getElementById("arrow-decision-farmer");
+
+        // Reset arrow colors
+        arrowFieldClimate.className = "flow-arrow";
+        arrowClimateDecision.className = "flow-arrow";
+        arrowDecisionFarmer.className = "flow-arrow";
+
+        // Update flow labels
+        document.getElementById("flow-field").innerText = field.soil_status;
+        document.getElementById("flow-climate").innerText = climate.rain_expected ? "Rain Detected" : "No Rain";
+        document.getElementById("flow-decision").innerText = decisionA.decision;
+
+        // Field → Climate (always ok)
+        if (field.soil_status === "CRITICAL" || field.soil_status === "LOW") {
+          arrowFieldClimate.classList.add("flow-warn");
+        } else {
+          arrowFieldClimate.classList.add("flow-ok");
+        }
+
+        // Climate → Decision (override detection)
+        if (climate.rain_expected && decisionA.decision === "HOLD") {
+          arrowClimateDecision.classList.add("flow-block");
+        } else if (decisionA.decision === "EMERGENCY_STOP") {
+          arrowClimateDecision.classList.add("flow-block");
+        } else {
+          arrowClimateDecision.classList.add("flow-ok");
+        }
+
+        // Decision → Farmer
+        arrowDecisionFarmer.classList.add("flow-ok");
+
+        // ================= IMPACT METRICS =================
+        if (data.impact_metrics) {
+          document.getElementById("water-saved").innerText =
+            data.impact_metrics.water_saved_liters.toFixed(1) + " L";
+          document.getElementById("cycles-avoided").innerText =
+            data.impact_metrics.pump_cycles_avoided;
+        }
+
+      } catch (e) {
+        console.log("Backend unreachable");
+      }
+    }
+
+    async function updateTimeline() {
+      try {
+        const res = await fetch(API + "/timeline");
+        const data = await res.json();
+        const list = document.getElementById("timeline");
+        list.innerHTML = "";
+
+        data.timeline.slice().reverse().forEach(entry => {
+          const div = document.createElement("div");
+          div.className = "timeline-item " + entry.decision;
+
+          div.innerHTML = `
+            <div class="timeline-time">${new Date(entry.timestamp).toLocaleTimeString()}</div>
+            <strong>Decision:</strong> ${entry.decision} |
+            <strong>Soil:</strong> ${entry.soil}% |
+            <strong>Rain:</strong> ${entry.rain_expected ? "Yes" : "No"}
+          `;
+          list.appendChild(div);
+        });
+      } catch (e) {
+        console.log("Timeline unavailable");
+      }
+    }
+
+    setInterval(update, 2000);
+    setInterval(updateTimeline, 3000);
+    update();
+    updateTimeline();
+  </script>
+
+</body>
+
+</html>
