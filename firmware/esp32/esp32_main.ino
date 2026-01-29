@@ -14,9 +14,9 @@
 #include <ArduinoJson.h>
 
 /* ===================== CONFIG ===================== */
-const char* WIFI_SSID = "YOUR_WIFI_NAME";
-const char* WIFI_PASSWORD = "YOUR_WIFI_PASSWORD";
-const char* SERVER_URL = "http://YOUR_SERVER_IP:5000/data";
+const char* WIFI_SSID = "<WIFI_SSID>";
+const char* WIFI_PASSWORD = "<WIFI_PASSWORD>";
+const char* SERVER_URL = "http://<SERVER_IP>:5000/data";
 
 const unsigned long SENSOR_INTERVAL = 2000;
 const unsigned long TELEMETRY_INTERVAL = 10000;
