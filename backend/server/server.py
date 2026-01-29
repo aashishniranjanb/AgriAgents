@@ -3,6 +3,8 @@ AgriAgents - Multi-Agent Backend Orchestrator
 Architecture:
 - Explicit per-agent outputs
 - Scenario control for demos
+- Impact metrics tracking
+- Decision timeline buffer
 - Clean agent boundaries
 
 Agents:
@@ -39,10 +41,28 @@ STATE = {
 }
 
 # ==================================================
+# 📊 IMPACT METRICS (DEMO-SAFE)
+# ==================================================
+IMPACT = {
+    "water_saved_liters": 0.0,
+    "pump_cycles_avoided": 0
+}
+
+# Demo assumption: pump flow rate
+PUMP_FLOW_LPM = 10  # 10 liters per minute (stated in README)
+
+# ==================================================
+# 🕒 DECISION TIMELINE (RING BUFFER)
+# ==================================================
+DECISION_TIMELINE = []
+MAX_TIMELINE_LENGTH = 30  # keep last 30 decisions
+
+# ==================================================
 # 🎭 SCENARIO CONTROL
 # ==================================================
 @app.route("/scenario", methods=["POST"])
 def set_scenario():
+    global IMPACT
     data = request.json
     SCENARIO["mode"] = data.get("mode", "NORMAL")
 
@@ -52,6 +72,8 @@ def set_scenario():
         SCENARIO["rain_eta"] = None
     else:
         SCENARIO["rain_eta"] = None
+        # Reset impact metrics on Normal mode
+        IMPACT = {"water_saved_liters": 0.0, "pump_cycles_avoided": 0}
 
     print(f"🎭 Scenario changed to: {SCENARIO['mode']}")
     return jsonify({"status": "ok", "scenario": SCENARIO})
@@ -123,6 +145,13 @@ def ingest():
     elif soil < 35:
         reason = "Soil moisture below optimal range"
 
+    # ==================================================
+    # 📊 IMPACT METRIC UPDATE
+    # ==================================================
+    if soil < 30 and decision == "HOLD" and climate_agent["rain_expected"]:
+        IMPACT["pump_cycles_avoided"] += 1
+        IMPACT["water_saved_liters"] += PUMP_FLOW_LPM * 1  # 1-minute demo unit
+
     if decision == "IRRIGATE":
         STATE["last_action_time"] = datetime.utcnow()
         field_agent["pump_state"] = "ON"
@@ -164,6 +193,22 @@ def ingest():
     }
 
     # ==================================================
+    # 🕒 TIMELINE SNAPSHOT
+    # ==================================================
+    timeline_entry = {
+        "timestamp": datetime.utcnow().isoformat(),
+        "soil": round(soil, 1),
+        "rain_expected": climate_agent["rain_expected"],
+        "decision": decision_agent["decision"],
+        "reason": decision_agent["reason"],
+        "water_saved": IMPACT["water_saved_liters"],
+        "pump_cycles_avoided": IMPACT["pump_cycles_avoided"]
+    }
+
+    DECISION_TIMELINE.append(timeline_entry)
+    DECISION_TIMELINE[:] = DECISION_TIMELINE[-MAX_TIMELINE_LENGTH:]
+
+    # ==================================================
     # 📤 STORE & RETURN
     # ==================================================
     STATE["latest_agents"] = {
@@ -173,12 +218,13 @@ def ingest():
         "farmer_assistant": farmer_assistant
     }
 
-    print(f"📡 {soil}% | {decision} | Rain: {rain_expected}")
+    print(f"📡 {soil}% | {decision} | Rain: {rain_expected} | Saved: {IMPACT['water_saved_liters']}L")
 
     return jsonify({
         "status": "ok",
         "decision": decision,
-        "agents": STATE["latest_agents"]
+        "agents": STATE["latest_agents"],
+        "impact_metrics": IMPACT
     })
 
 
@@ -189,7 +235,18 @@ def ingest():
 def state():
     return jsonify({
         "timestamp": datetime.utcnow().isoformat(),
-        "agents": STATE["latest_agents"]
+        "agents": STATE["latest_agents"],
+        "impact_metrics": IMPACT
+    })
+
+
+# ==================================================
+# 🕒 TIMELINE API
+# ==================================================
+@app.route("/timeline", methods=["GET"])
+def timeline():
+    return jsonify({
+        "timeline": DECISION_TIMELINE
     })
 
 
@@ -199,7 +256,7 @@ def state():
 if __name__ == "__main__":
     print("=" * 50)
     print("🌱 AgriAgents - Multi-Agent Backend")
-    print("   Explicit per-agent outputs enabled")
+    print("   Impact Metrics + Decision Timeline enabled")
     print("=" * 50)
     print()
     app.run(host="0.0.0.0", port=5000, debug=True)

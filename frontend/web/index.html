@@ -169,6 +169,82 @@
     .flow-block {
       color: #dc2626;
     }
+
+    /* ================= IMPACT METRICS ================= */
+    .impact {
+      grid-column: 1 / -1;
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 16px;
+      margin-top: 20px;
+    }
+
+    .impact-card {
+      background: #ecfeff;
+      border: 1px solid #bae6fd;
+      border-radius: 14px;
+      padding: 20px;
+      text-align: center;
+    }
+
+    .impact-value {
+      font-size: 2.2rem;
+      font-weight: 900;
+      color: #0369a1;
+    }
+
+    .impact-label {
+      font-size: 0.85rem;
+      color: #075985;
+      margin-top: 6px;
+    }
+
+    /* ================= TIMELINE ================= */
+    .timeline {
+      margin-top: 20px;
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      background: #ffffff;
+      padding: 20px;
+    }
+
+    .timeline-title {
+      font-size: 0.85rem;
+      color: var(--muted);
+      letter-spacing: 1px;
+      text-transform: uppercase;
+      margin-bottom: 12px;
+    }
+
+    .timeline-list {
+      max-height: 200px;
+      overflow-y: auto;
+    }
+
+    .timeline-item {
+      border-left: 4px solid #e5e7eb;
+      padding: 10px 12px;
+      margin-bottom: 10px;
+      font-size: 0.85rem;
+    }
+
+    .timeline-item.IRRIGATE {
+      border-color: #16a34a;
+    }
+
+    .timeline-item.HOLD {
+      border-color: #0ea5e9;
+    }
+
+    .timeline-item.EMERGENCY_STOP {
+      border-color: #dc2626;
+    }
+
+    .timeline-time {
+      font-size: 0.75rem;
+      color: var(--muted);
+      margin-bottom: 4px;
+    }
   </style>
 </head>
 
@@ -257,6 +333,25 @@
     </div>
   </div>
 
+  <!-- IMPACT METRICS -->
+  <div class="impact">
+    <div class="impact-card">
+      <div class="impact-value" id="water-saved">0 L</div>
+      <div class="impact-label">💧 Water Saved</div>
+    </div>
+
+    <div class="impact-card">
+      <div class="impact-value" id="cycles-avoided">0</div>
+      <div class="impact-label">🔁 Pump Cycles Avoided</div>
+    </div>
+  </div>
+
+  <!-- TIMELINE REPLAY -->
+  <div class="timeline">
+    <div class="timeline-title">🕒 Decision Timeline (Replay)</div>
+    <div class="timeline-list" id="timeline"></div>
+  </div>
+
   <script>
     let API = localStorage.getItem("agro_api") || "http://localhost:5000";
 
@@ -335,13 +430,47 @@
         // Decision → Farmer
         arrowDecisionFarmer.classList.add("flow-ok");
 
+        // ================= IMPACT METRICS =================
+        if (data.impact_metrics) {
+          document.getElementById("water-saved").innerText =
+            data.impact_metrics.water_saved_liters.toFixed(1) + " L";
+          document.getElementById("cycles-avoided").innerText =
+            data.impact_metrics.pump_cycles_avoided;
+        }
+
       } catch (e) {
         console.log("Backend unreachable");
       }
     }
 
+    async function updateTimeline() {
+      try {
+        const res = await fetch(API + "/timeline");
+        const data = await res.json();
+        const list = document.getElementById("timeline");
+        list.innerHTML = "";
+
+        data.timeline.slice().reverse().forEach(entry => {
+          const div = document.createElement("div");
+          div.className = "timeline-item " + entry.decision;
+
+          div.innerHTML = `
+            <div class="timeline-time">${new Date(entry.timestamp).toLocaleTimeString()}</div>
+            <strong>Decision:</strong> ${entry.decision} |
+            <strong>Soil:</strong> ${entry.soil}% |
+            <strong>Rain:</strong> ${entry.rain_expected ? "Yes" : "No"}
+          `;
+          list.appendChild(div);
+        });
+      } catch (e) {
+        console.log("Timeline unavailable");
+      }
+    }
+
     setInterval(update, 2000);
+    setInterval(updateTimeline, 3000);
     update();
+    updateTimeline();
   </script>
 
 </body>
