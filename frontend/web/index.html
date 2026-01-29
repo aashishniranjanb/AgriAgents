@@ -3,209 +3,340 @@
 
 <head>
   <meta charset="UTF-8" />
-  <title>AgroSense AI | Mission Control</title>
+  <title>AgroSense AI | Smart Irrigation Control</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
 
   <style>
     :root {
-      --bg: #0f172a;
-      --panel: #1e293b;
-      --border: #334155;
-      --text: #f8fafc;
-      --muted: #94a3b8;
-      --blue: #3b82f6;
-      --green: #10b981;
-      --amber: #f59e0b;
-      --red: #ef4444;
-      --mono: 'Courier New', Courier, monospace;
+      --bg: #f8fafc;
+      --card: #ffffff;
+      --border: #e2e8f0;
+      --text: #1e293b;
+      --muted: #64748b;
+      --blue: #2563eb;
+      --green: #16a34a;
+      --amber: #d97706;
+      --red: #dc2626;
+      --cyan: #0891b2;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
     }
 
     body {
-      margin: 0;
-      padding: 20px;
       background: var(--bg);
       color: var(--text);
-      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto;
+      font-family: 'Inter', system-ui, sans-serif;
+      padding: 24px;
+      min-height: 100vh;
     }
 
     header {
       display: flex;
       justify-content: space-between;
       align-items: center;
-      border-bottom: 1px solid var(--border);
+      margin-bottom: 32px;
       padding-bottom: 16px;
-      margin-bottom: 24px;
+      border-bottom: 2px solid var(--border);
     }
 
     .brand {
-      font-size: 1.6rem;
+      font-size: 1.5rem;
       font-weight: 800;
-    }
-
-    .brand span {
       color: var(--green);
     }
 
-    .status {
+    .status-badge {
       display: flex;
       align-items: center;
       gap: 8px;
-      font-size: 0.8rem;
+      background: #dcfce7;
       color: var(--green);
-      background: rgba(16, 185, 129, 0.15);
-      padding: 6px 12px;
-      border-radius: 999px;
+      padding: 8px 16px;
+      border-radius: 24px;
+      font-weight: 600;
+      font-size: 0.85rem;
     }
 
     .pulse {
-      width: 8px;
-      height: 8px;
+      width: 10px;
+      height: 10px;
       background: var(--green);
       border-radius: 50%;
       animation: pulse 1.5s infinite;
     }
 
     @keyframes pulse {
-      0% {
+
+      0%,
+      100% {
         opacity: 1;
+        transform: scale(1);
       }
 
       50% {
-        opacity: 0.4;
-      }
-
-      100% {
-        opacity: 1;
+        opacity: 0.5;
+        transform: scale(0.9);
       }
     }
 
-    .grid {
+    /* MAIN LAYOUT */
+    .main-grid {
       display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-      gap: 20px;
+      grid-template-columns: 1fr 1fr;
+      gap: 24px;
     }
 
-    .card {
-      background: var(--panel);
-      border: 1px solid var(--border);
-      border-radius: 14px;
-      padding: 20px;
+    /* DECISION HERO CARD */
+    .decision-hero {
+      grid-column: 1 / -1;
+      background: var(--card);
+      border: 2px solid var(--border);
+      border-radius: 16px;
+      padding: 32px;
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr;
+      gap: 24px;
+      align-items: center;
     }
 
-    .title {
-      font-size: 0.8rem;
+    .decision-block {
+      text-align: center;
+    }
+
+    .decision-label {
+      font-size: 0.75rem;
+      text-transform: uppercase;
       letter-spacing: 1px;
       color: var(--muted);
-      margin-bottom: 14px;
-      text-transform: uppercase;
-      display: flex;
-      justify-content: space-between;
+      margin-bottom: 8px;
     }
 
-    .metric {
-      font-size: 2.4rem;
-      font-weight: 700;
-    }
-
-    .unit {
-      font-size: 0.9rem;
-      color: var(--muted);
-    }
-
-    .bar-bg {
-      margin-top: 10px;
-      height: 8px;
-      background: #334155;
-      border-radius: 6px;
-      overflow: hidden;
-    }
-
-    .bar-fill {
-      height: 100%;
-      transition: width 0.8s ease;
-    }
-
-    .decision {
+    .decision-value {
       font-size: 3rem;
-      font-weight: 900;
-      text-align: center;
-      margin: 10px 0;
+      font-weight: 800;
     }
 
-    .IRRIGATE {
-      color: var(--blue);
-    }
-
-    .HOLD {
+    .decision-value.HOLD {
       color: var(--green);
     }
 
-    .DELAY {
+    .decision-value.IRRIGATE {
+      color: var(--blue);
+    }
+
+    .decision-value.DELAY {
       color: var(--amber);
     }
 
-    .EMERGENCY_STOP {
+    .decision-value.EMERGENCY_STOP {
       color: var(--red);
     }
 
-    .stats {
-      display: flex;
-      justify-content: space-between;
-      margin-top: 20px;
-      padding: 12px;
-      background: rgba(0, 0, 0, 0.25);
-      border-radius: 10px;
+    .pump-status {
+      display: inline-block;
+      padding: 8px 20px;
+      border-radius: 8px;
+      font-weight: 700;
+      font-size: 1.1rem;
+      margin-top: 8px;
     }
 
-    .stat {
-      text-align: center;
+    .pump-off {
+      background: #dcfce7;
+      color: var(--green);
     }
 
-    .stat-value {
-      font-size: 1.4rem;
+    .pump-on {
+      background: #dbeafe;
+      color: var(--blue);
+    }
+
+    /* REASON BOX */
+    .reason-box {
+      background: #fefce8;
+      border: 2px solid #fef08a;
+      border-radius: 12px;
+      padding: 20px;
+      grid-column: 2 / 4;
+    }
+
+    .reason-title {
+      font-size: 0.75rem;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      color: var(--amber);
+      margin-bottom: 8px;
+      font-weight: 600;
+    }
+
+    .reason-text {
+      font-size: 1.25rem;
+      font-weight: 600;
+      color: #92400e;
+      line-height: 1.4;
+    }
+
+    .impact-text {
+      margin-top: 12px;
+      font-size: 0.95rem;
+      color: #a16207;
+    }
+
+    /* SENSOR CARDS */
+    .card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 20px;
+    }
+
+    .card-title {
+      font-size: 0.7rem;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      color: var(--muted);
+      margin-bottom: 12px;
+    }
+
+    .card-value {
+      font-size: 2.2rem;
       font-weight: 700;
     }
 
-    .terminal {
-      background: #000;
-      border: 1px solid var(--border);
-      border-radius: 10px;
-      padding: 14px;
-      font-family: var(--mono);
+    .card-unit {
       font-size: 0.85rem;
-      color: #33ff00;
-      height: 240px;
+      color: var(--muted);
+      margin-left: 4px;
+    }
+
+    .progress-bar {
+      margin-top: 12px;
+      height: 6px;
+      background: #e2e8f0;
+      border-radius: 4px;
+      overflow: hidden;
+    }
+
+    .progress-fill {
+      height: 100%;
+      transition: width 0.5s ease;
+    }
+
+    /* AGENT TRACE */
+    .trace-card {
+      grid-column: 1 / -1;
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 20px;
+    }
+
+    .trace-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 16px;
+    }
+
+    .trace-title {
+      font-size: 0.75rem;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      color: var(--muted);
+      font-weight: 600;
+    }
+
+    .trace-log {
+      background: #f1f5f9;
+      border-radius: 8px;
+      padding: 16px;
+      font-family: 'Consolas', monospace;
+      font-size: 0.85rem;
+      height: 180px;
       overflow-y: auto;
+      color: #334155;
     }
 
-    .log {
+    .log-entry {
       margin-bottom: 6px;
-      opacity: 0.9;
+      line-height: 1.5;
     }
 
-    .timestamp {
-      color: #555;
+    .log-time {
+      color: #94a3b8;
+      margin-right: 8px;
+    }
+
+    .log-weather {
+      color: var(--cyan);
+    }
+
+    .log-decision {
+      color: var(--green);
+      font-weight: 600;
+    }
+
+    .log-warning {
+      color: var(--amber);
+    }
+
+    .log-sensor {
+      color: var(--muted);
+    }
+
+    /* WEATHER WIDGET */
+    .weather-widget {
+      background: linear-gradient(135deg, #0ea5e9, #0284c7);
+      color: white;
+      border-radius: 12px;
+      padding: 20px;
+      text-align: center;
+    }
+
+    .weather-icon {
+      font-size: 2.5rem;
+      margin-bottom: 8px;
+    }
+
+    .weather-label {
+      font-size: 0.75rem;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      opacity: 0.8;
+    }
+
+    .weather-value {
+      font-size: 1.5rem;
+      font-weight: 700;
+      margin-top: 4px;
+    }
+
+    /* METRICS ROW */
+    .metrics-row {
+      display: flex;
+      gap: 16px;
+      margin-top: 16px;
+    }
+
+    .metric-chip {
+      background: #f1f5f9;
+      padding: 8px 16px;
+      border-radius: 8px;
+      font-size: 0.85rem;
+    }
+
+    .metric-label {
+      color: var(--muted);
       margin-right: 6px;
     }
 
-    #config {
-      position: fixed;
-      bottom: 16px;
-      right: 16px;
-      background: var(--panel);
-      border: 1px solid var(--border);
-      border-radius: 10px;
-      padding: 10px;
-      display: none;
-    }
-
-    button {
-      background: var(--blue);
-      border: none;
-      color: white;
-      padding: 6px 10px;
-      border-radius: 6px;
-      cursor: pointer;
+    .metric-value {
+      font-weight: 700;
     }
   </style>
 </head>
@@ -213,58 +344,80 @@
 <body>
 
   <header>
-    <div class="brand">🌱 AgroSense<span>AI</span></div>
-    <div class="status">
-      <div class="pulse"></div> SYSTEM ONLINE
+    <div class="brand">🌱 AgroSense AI</div>
+    <div class="status-badge">
+      <div class="pulse"></div>
+      LIVE MONITORING
     </div>
   </header>
 
-  <div class="grid">
+  <div class="main-grid">
 
-    <div class="card">
-      <div class="title">Soil Moisture</div>
-      <div class="metric" id="soil">--</div>
-      <div class="unit">% Moisture</div>
-      <div class="bar-bg">
-        <div id="soil-bar" class="bar-fill" style="width:0%;background:var(--blue)"></div>
+    <!-- DECISION HERO -->
+    <div class="decision-hero">
+      <div class="decision-block">
+        <div class="decision-label">AI Decision</div>
+        <div class="decision-value" id="decision">HOLD</div>
+        <div class="pump-status pump-off" id="pumpStatus">PUMP OFF</div>
+      </div>
+
+      <div class="reason-box">
+        <div class="reason-title">💡 Reason</div>
+        <div class="reason-text" id="reasonText">Rain expected in 1 hour 28 minutes</div>
+        <div class="impact-text" id="impactText">💧 ~40 liters of water saved</div>
       </div>
     </div>
 
+    <!-- SENSOR CARDS -->
     <div class="card">
-      <div class="title">Temperature</div>
-      <div class="metric" id="temp">--</div>
-      <div class="unit">°C</div>
-      <div class="bar-bg">
-        <div id="temp-bar" class="bar-fill" style="width:0%;background:var(--amber)"></div>
+      <div class="card-title">Soil Moisture</div>
+      <div>
+        <span class="card-value" id="soil">--</span>
+        <span class="card-unit">%</span>
       </div>
-    </div>
-
-    <div class="card">
-      <div class="title">Light Level</div>
-      <div class="metric" id="light">--</div>
-      <div class="unit">LDR</div>
-    </div>
-
-    <div class="card" style="border-color:var(--blue)">
-      <div class="title">Agent Decision</div>
-      <div id="decision" class="decision">WAITING</div>
-
-      <div class="stats">
-        <div class="stat">
-          <div class="stat-value" id="confidence">--%</div>
-          <div class="unit">Confidence</div>
-        </div>
-        <div class="stat">
-          <div class="stat-value" id="utility">--</div>
-          <div class="unit">Utility</div>
+      <div class="progress-bar">
+        <div id="soilBar" class="progress-fill" style="width:0%; background: #2563eb;"></div>
+      </div>
+      <div class="metrics-row">
+        <div class="metric-chip">
+          <span class="metric-label">Threshold:</span>
+          <span class="metric-value">30%</span>
         </div>
       </div>
     </div>
 
-    <div class="card" style="grid-column:1/-1">
-      <div class="title">Explainable AI Trace (Live)</div>
-      <div id="terminal" class="terminal">
-        <div class="log">System initialized. Waiting for telemetry...</div>
+    <div class="card">
+      <div class="card-title">Temperature</div>
+      <div>
+        <span class="card-value" id="temp">--</span>
+        <span class="card-unit">°C</span>
+      </div>
+      <div class="progress-bar">
+        <div id="tempBar" class="progress-fill" style="width:0%; background: #d97706;"></div>
+      </div>
+    </div>
+
+    <div class="weather-widget">
+      <div class="weather-icon">🌧️</div>
+      <div class="weather-label">Rain Forecast</div>
+      <div class="weather-value" id="rainForecast">In 1h 28m</div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Light Level</div>
+      <div>
+        <span class="card-value" id="light">--</span>
+        <span class="card-unit">lux</span>
+      </div>
+    </div>
+
+    <!-- AGENT TRACE -->
+    <div class="trace-card">
+      <div class="trace-header">
+        <div class="trace-title">🧠 Agent Reasoning Trace</div>
+      </div>
+      <div class="trace-log" id="traceLog">
+        <div class="log-entry"><span class="log-time">[--:--]</span> System initialized. Waiting for telemetry...</div>
       </div>
     </div>
 
@@ -272,16 +425,16 @@
 
   <script>
     let API = localStorage.getItem("agro_api") || "http://localhost:5000";
-    const terminal = document.getElementById("terminal");
-    let lastLogSignature = "";
+    const traceLog = document.getElementById("traceLog");
+    let lastSignature = "";
 
-    function log(msg) {
-      const time = new Date().toLocaleTimeString();
+    function log(msg, type = "") {
+      const time = new Date().toLocaleTimeString('en-US', { hour12: false, hour: '2-digit', minute: '2-digit', second: '2-digit' });
       const div = document.createElement("div");
-      div.className = "log";
-      div.innerHTML = `<span class="timestamp">[${time}]</span>${msg}`;
-      terminal.appendChild(div);
-      terminal.scrollTop = terminal.scrollHeight;
+      div.className = "log-entry";
+      div.innerHTML = `<span class="log-time">[${time}]</span><span class="log-${type}">${msg}</span>`;
+      traceLog.appendChild(div);
+      traceLog.scrollTop = traceLog.scrollHeight;
     }
 
     async function fetchState() {
@@ -290,36 +443,52 @@
         const data = await res.json();
         if (!data.sensors) return;
 
+        // Update sensors
         document.getElementById("soil").innerText = data.sensors.soil;
         document.getElementById("temp").innerText = data.sensors.temperature;
         document.getElementById("light").innerText = data.sensors.light;
 
-        document.getElementById("soil-bar").style.width =
-          Math.min(data.sensors.soil, 100) + "%";
+        document.getElementById("soilBar").style.width = Math.min(data.sensors.soil, 100) + "%";
+        document.getElementById("tempBar").style.width = Math.min(data.sensors.temperature * 2, 100) + "%";
 
-        document.getElementById("temp-bar").style.width =
-          Math.min(data.sensors.temperature * 2, 100) + "%";
+        // Update decision
+        const decision = data.agent_analysis?.decision || "HOLD";
+        const decisionEl = document.getElementById("decision");
+        decisionEl.innerText = decision;
+        decisionEl.className = "decision-value " + decision;
 
-        document.getElementById("decision").innerText = data.agent_analysis.decision;
-        document.getElementById("decision").className = "decision " + data.agent_analysis.decision;
+        // Update pump status
+        const pumpEl = document.getElementById("pumpStatus");
+        if (decision === "IRRIGATE") {
+          pumpEl.innerText = "PUMP ON";
+          pumpEl.className = "pump-status pump-on";
+        } else {
+          pumpEl.innerText = "PUMP OFF";
+          pumpEl.className = "pump-status pump-off";
+        }
 
-        document.getElementById("confidence").innerText =
-          Math.round(data.agent_analysis.confidence * 100) + "%";
+        // Update reason
+        if (data.rain_forecast) {
+          document.getElementById("rainForecast").innerText = data.rain_forecast;
+        }
+        if (data.reason) {
+          document.getElementById("reasonText").innerText = data.reason;
+        }
+        if (data.impact) {
+          document.getElementById("impactText").innerText = "💧 " + data.impact;
+        }
 
-        document.getElementById("utility").innerText = data.agent_analysis.utility;
-
-        // ----- PIPE AGENT LOGS -----
-        const signature = JSON.stringify(data.agent_logs || []) + data.crop_insight;
-        if (signature !== lastLogSignature) {
-          lastLogSignature = signature;
-
-          (data.agent_logs || []).forEach(entry => {
-            log(entry);
+        // Agent logs
+        const signature = JSON.stringify(data.agent_logs || []);
+        if (signature !== lastSignature && data.agent_logs) {
+          lastSignature = signature;
+          data.agent_logs.forEach(entry => {
+            let type = "sensor";
+            if (entry.includes("Rain") || entry.includes("Weather")) type = "weather";
+            if (entry.includes("Decision") || entry.includes("HOLD") || entry.includes("IRRIGATE")) type = "decision";
+            if (entry.includes("⚠")) type = "warning";
+            log(entry, type);
           });
-
-          if (data.crop_insight) {
-            log("🌱 Crop Doctor: " + data.crop_insight);
-          }
         }
 
       } catch (e) {
@@ -329,7 +498,7 @@
 
     setInterval(fetchState, 2000);
     fetchState();
-    log("Connecting to Agentic Backend at " + API + "...");
+    log("Connecting to AgroSense AI backend...", "sensor");
   </script>
 
 </body>

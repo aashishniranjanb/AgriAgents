@@ -1,33 +1,19 @@
 """
-AgroSense AI - Agentic Backend Orchestrator
+AgroSense AI - Agentic Backend Orchestrator (Demo-Optimized)
 Architecture:
 - Device Shadow (Digital Twin)
-- Tool-using Agent (Explicit Orchestration)
-- Explainable AI
-- Demo-safe (Fake or Real Data)
+- Tool-using Agent (Weather, Diagnostics, GenAI)
+- Explainable AI with clear causality
+- Demo-safe with scenario support
 
-TOOLS:
-1. Weather Forecast (OpenWeather)
-2. Crop Doctor (Gemini GenAI)
-3. Hardware Diagnostics
+DEMO STORY: "Rain prevents unnecessary irrigation"
 """
 
 from flask import Flask, request, jsonify
 from flask_cors import CORS
-from datetime import datetime, timedelta
-import requests
-import google.generativeai as genai
+from datetime import datetime
 
 from agentic_engine import agentic_decision, generate_explanation
-
-# ==================================================
-# 🔐 API KEYS (SET YOURS)
-# ==================================================
-OPENWEATHER_KEY = "YOUR_OPENWEATHER_API_KEY"
-GOOGLE_API_KEY = "YOUR_GOOGLE_API_KEY"
-
-genai.configure(api_key=GOOGLE_API_KEY)
-genai_model = genai.GenerativeModel("gemini-pro")
 
 # ==================================================
 # 🌐 APP INIT
@@ -48,62 +34,28 @@ SYSTEM_STATE = {
 }
 
 # ==================================================
-# 🛠️ TOOL 1 — WEATHER FORECAST
+# 🛠️ WEATHER TOOL (Demo Mode)
 # ==================================================
-def check_rain_forecast(lat=12.97, lon=77.59):
-    url = "https://api.openweathermap.org/data/2.5/forecast"
-    params = {
-        "lat": lat,
-        "lon": lon,
-        "appid": OPENWEATHER_KEY,
-        "units": "metric"
-    }
-
-    try:
-        data = requests.get(url, params=params, timeout=3).json()
-        for entry in data.get("list", [])[:4]:  # ~12 hours
-            if "rain" in entry:
-                return True, entry["dt_txt"]
-    except Exception:
-        pass
-
-    return False, None
-
-# ==================================================
-# �️ TOOL 2 — CROP DOCTOR (GENAI)
-# ==================================================
-def crop_doctor(soil_trend):
-    prompt = f"""
-You are an agronomy assistant.
-Given this soil moisture trend over time:
-
-{soil_trend}
-
-Identify ONE meaningful insight and ONE practical recommendation.
-Do not mention AI or models.
-"""
-
-    try:
-        response = genai_model.generate_content(prompt)
-        return response.text.strip()
-    except Exception:
-        return "Trend analysis unavailable at the moment."
-
-# ==================================================
-# �️ TOOL 3 — HARDWARE DIAGNOSTICS
-# ==================================================
-def diagnose_hardware(soil_history, last_command):
-    if last_command != "IRRIGATE":
-        return None
-
-    if len(soil_history) < 3:
-        return None
-
-    # Check if soil hasn't increased after irrigation
-    if soil_history[-1] <= soil_history[-3]:
-        return "⚠️ Possible pump failure or empty water tank detected."
-
-    return None
+def check_rain_forecast(rain_minutes):
+    """
+    In demo mode, rain_minutes comes from the scenario generator.
+    In production, this would call OpenWeather API.
+    """
+    if rain_minutes is None:
+        return False, None, None
+    
+    if rain_minutes <= 0:
+        return True, "Rain occurring now", 0
+    
+    hours = rain_minutes // 60
+    mins = rain_minutes % 60
+    
+    if hours > 0:
+        time_str = f"In {hours}h {mins}m"
+    else:
+        time_str = f"In {mins} minutes"
+    
+    return True, time_str, rain_minutes
 
 # ==================================================
 # 📡 TELEMETRY INGEST
@@ -111,9 +63,10 @@ def diagnose_hardware(soil_history, last_command):
 @app.route("/data", methods=["POST"])
 def ingest_data():
     payload = request.get_json(force=True)
-    print("📡 Incoming:", payload)
+    print(f"📡 Incoming: {payload}")
 
     sensors_raw = payload.get("sensors", {})
+    rain_minutes = payload.get("rain_minutes")
 
     sensor_data = {
         "soil": float(sensors_raw.get("soil", 0)),
@@ -121,15 +74,11 @@ def ingest_data():
         "light": int(sensors_raw.get("light", 0))
     }
 
-    # ----------------------------
-    # Update history
-    # ----------------------------
+    # Track history
     SYSTEM_STATE["soil_history"].append(sensor_data["soil"])
     SYSTEM_STATE["soil_history"] = SYSTEM_STATE["soil_history"][-20:]
 
-    # ----------------------------
-    # BASE AGENT DECISION
-    # ----------------------------
+    # Base agent decision
     agent_output = agentic_decision(
         sensor_data=sensor_data,
         last_action_time=SYSTEM_STATE["last_action_time"]
@@ -137,61 +86,87 @@ def ingest_data():
 
     decision = agent_output["decision"]
     agent_logs = []
+    reason = ""
+    impact = ""
+    rain_forecast_display = None
 
     # ----------------------------
-    # TOOL 1: WEATHER AWARENESS
+    # LOG: Sensor reading
     # ----------------------------
-    if decision == "IRRIGATE" and sensor_data["soil"] < 35:
-        rain, time = check_rain_forecast()
-        if rain:
-            decision = "HOLD"
-            agent_logs.append(f"🌧️ Rain forecast detected ({time}) → Skipping irrigation")
+    agent_logs.append(f"Soil moisture: {sensor_data['soil']}% (threshold: 30%)")
 
     # ----------------------------
-    # TOOL 2: CROP DOCTOR (GENAI)
+    # TOOL: Weather Forecast
     # ----------------------------
-    insight = None
-    if len(SYSTEM_STATE["soil_history"]) >= 6:
-        insight = crop_doctor(SYSTEM_STATE["soil_history"][-6:])
-        agent_logs.append("🌱 Crop Doctor analysis completed")
+    rain_coming, rain_time_str, rain_mins = check_rain_forecast(rain_minutes)
+
+    if rain_coming and rain_mins is not None:
+        rain_forecast_display = rain_time_str
+        
+        if rain_mins == 0:
+            agent_logs.append("🌧️ Rain detected - irrigation not needed")
+            reason = "Rain is occurring now"
+            impact = "Natural irrigation in progress"
+            if decision == "IRRIGATE":
+                decision = "HOLD"
+        elif rain_mins > 0 and rain_mins <= 120:
+            agent_logs.append(f"🌧️ Weather API: Rain forecast {rain_time_str}")
+            agent_logs.append("🧠 Decision override: HOLD irrigation")
+            
+            # Calculate water savings
+            water_saved = int((30 - sensor_data["soil"]) * 3)  # ~3L per % deficit
+            
+            reason = f"Rain expected {rain_time_str.lower()}"
+            impact = f"~{water_saved} liters of water saved"
+            
+            if decision == "IRRIGATE":
+                decision = "HOLD"
+                agent_logs.append(f"💧 Estimated savings: {water_saved}L water")
+        elif rain_mins < 0:
+            agent_logs.append("🌧️ Recent rain detected - soil recovering")
+            reason = "Soil recovering from recent rain"
+            impact = "No irrigation needed"
+            rain_forecast_display = "Rained recently"
+    else:
+        rain_forecast_display = "No rain expected"
+        
+        if decision == "IRRIGATE":
+            reason = f"Soil critically dry ({sensor_data['soil']}%)"
+            impact = "Irrigation recommended"
+            agent_logs.append(f"💧 Soil below threshold - irrigation needed")
+        elif decision == "HOLD":
+            reason = "Soil moisture adequate"
+            impact = "System monitoring"
+        elif decision == "DELAY":
+            reason = "Moderate dryness detected"
+            impact = "Monitoring conditions"
 
     # ----------------------------
-    # TOOL 3: HARDWARE DIAGNOSTICS
+    # Final decision log
     # ----------------------------
-    diagnostic_alert = diagnose_hardware(
-        SYSTEM_STATE["soil_history"],
-        SYSTEM_STATE["last_pump_command"]
-    )
+    pump_status = "ON" if decision == "IRRIGATE" else "OFF"
+    agent_logs.append(f"✅ Final decision: {decision} (Pump {pump_status})")
 
-    if diagnostic_alert:
-        decision = "EMERGENCY_STOP"
-        agent_logs.append(diagnostic_alert)
-
-    # ----------------------------
-    # STATE MEMORY UPDATE
-    # ----------------------------
+    # State memory
     if decision == "IRRIGATE":
         SYSTEM_STATE["last_action_time"] = datetime.utcnow()
-
     SYSTEM_STATE["last_pump_command"] = decision
 
-    # ----------------------------
-    # EXPLANATION
-    # ----------------------------
+    # Explanation
     explanation = generate_explanation(agent_output)
 
-    # ----------------------------
-    # UPDATE DEVICE SHADOW
-    # ----------------------------
+    # Update device shadow
     SYSTEM_STATE["latest_snapshot"] = {
-        "device_id": payload.get("device_id", "simulator"),
+        "device_id": payload.get("device_id", "demo"),
         "sensors": sensor_data,
         "agent_analysis": {
             **agent_output,
             "decision": decision
         },
         "agent_logs": agent_logs,
-        "crop_insight": insight,
+        "rain_forecast": rain_forecast_display,
+        "reason": reason,
+        "impact": impact,
         "explanation": explanation,
         "last_updated": datetime.utcnow().isoformat()
     }
@@ -209,5 +184,11 @@ def get_state():
 # 🚀 ENTRYPOINT
 # ==================================================
 if __name__ == "__main__":
-    print("🟢 AgroSense AI Agentic Backend Running (Port 5000)")
+    print("=" * 50)
+    print("🌱 AgroSense AI - Demo Backend")
+    print("   Story: Rain prevents unnecessary irrigation")
+    print("=" * 50)
+    print()
+    print("🟢 Server running on http://localhost:5000")
+    print()
     app.run(host="0.0.0.0", port=5000, debug=True)
