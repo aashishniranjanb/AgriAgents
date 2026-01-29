@@ -1,99 +1,144 @@
 # AgroSense AI 🌱  
-**Agentic AI + Edge ML Powered Smart Agriculture Platform**
+**Agentic AI–Driven Smart Irrigation (Production-Grade Showcase)**
 
-AgroSense AI is a production-grade showcase project that demonstrates how
-**Edge ML**, **Agentic AI**, and **Generative AI (Explainability)** can work
-together in an IoT-based smart agriculture system.
+AgroSense AI is a full-stack IoT + AI showcase that demonstrates how
+**edge safety logic**, **utility-based agentic reasoning**, and
+**explainable AI** can work together in a real hardware system.
 
-This repository is structured to reflect **real-world software and hardware
-engineering practices**, not a student prototype.
+This repository is intentionally designed to reflect
+**real-world engineering practices**, not tutorial code.
 
 ---
 
 ## 🎯 Project Objective
 
-To build a **deployable, modular, and explainable** smart irrigation system that:
+To demonstrate a **safe, explainable, and state-aware smart irrigation system** that:
 
-- Collects real-time sensor data using ESP32
-- Makes **edge-level decisions** for safety and latency
-- Uses **agentic AI** in the backend for goal-driven reasoning
-- Uses **Generative AI** for human-readable explanations
-- Displays everything on a professional web dashboard
-
----
-
-## 🧠 System Architecture (High-Level)
-
-```
-[Sensors + ESP32]
-       |
-       |  JSON (HTTP)
-       v
-[Backend Server]
-  • Agentic Decision Logic
-  • GenAI Explainability
-       |
-       v
-[Web Dashboard]
-  • Live Sensor Data
-  • AI Decisions
-  • Reasoning Trace
-```
+- Collects live data from real sensors (ESP32)
+- Maintains a cloud-side **device shadow (digital twin)**
+- Uses **utility-based agentic AI** for decision-making
+- Explains every decision in human-readable form
+- Visualizes the system through a web dashboard
 
 ---
 
-## 🔧 Hardware Used (Current Stage)
+## 🧠 System Architecture
+
+```
+ESP32 (Sensors + Relay)
+        ↓
+Telemetry (HTTP / JSON)
+        ↓
+Backend Orchestrator (Flask)
+  • Device Shadow
+  • Agentic AI Engine
+        ↓
+    Web Dashboard
+  • Live Data
+  • Decisions
+  • Explanations
+```
+
+This mirrors the **AWS IoT Core + Lambda + Device Shadow** pattern,
+implemented locally for demonstration.
+
+---
+
+## 🔧 Hardware Used (Actual, Not Assumed)
 
 - ESP32
 - DHT11 (Temperature & Humidity)
 - Capacitive Soil Moisture Sensor
-- LDR (Light Sensor)
-- Relay Module (Water Pump Control)
+- LDR (Light Intensity)
+- Relay Module (Water Pump)
 
-> ⚠️ Note: Some sensors are hobby-grade and are used **only for demonstration**.
-The architecture is designed to support industrial-grade sensors.
+> ⚠️ Note: Sensors are hobby-grade and used **only for demonstration**.
+The architecture supports industrial sensors without changes.
 
 ---
 
-## 🧪 AI Layers Explained (No Overclaim)
+## 🤖 AI Design (No Overclaim)
 
-| Layer | Purpose |
-|------|--------|
-| Edge Logic | Fast, safe decisions (TinyML-ready) |
-| Agentic AI | Goal-based reasoning (water efficiency) |
-| GenAI | Explainable decisions (not control) |
+### Edge Layer (ESP32)
+- Finite State Machine (FSM)
+- Hysteresis (prevents relay chatter)
+- Safety cutoff (max pump runtime)
+- Operates independently of the cloud
+
+### Agentic AI Layer (Backend)
+- Utility-based decision scoring
+- State-aware (uses time memory)
+- Avoids threshold-only logic
+- Produces confidence + reasoning trace
+
+### Explainability
+- Every decision is accompanied by:
+  - Utility score
+  - Confidence
+  - Human-readable explanation
+
+> Generative AI is used for **explanation**, not control.
 
 ---
 
 ## 📂 Repository Structure
 
 ```
-firmware/   → ESP32 source code
-backend/    → Agentic AI + API server
-frontend/   → Web dashboard
-docs/       → Architecture & diagrams
+firmware/
+└── esp32/
+    └── esp32_main.ino
+
+backend/
+└── server/
+    ├── server.py
+    └── agentic_engine.py
+
+frontend/
+└── web/
+    └── index.html   (next step)
+
+docs/
 ```
 
 ---
 
-## 🚀 Roadmap (Incremental)
+## 🚀 How to Run (Local Demo)
 
-- [ ] ESP32 firmware (sensor → JSON)
-- [ ] Backend API (receive + decide)
-- [ ] Agentic AI logic
-- [ ] GenAI explanations
-- [ ] Web dashboard
-- [ ] Edge ML (TinyML integration)
+### Backend
+```bash
+cd backend/server
+pip install flask flask-cors
+python server.py
+```
+
+### ESP32
+* Flash `esp32_main.ino`
+* Set WiFi credentials
+* Point `SERVER_URL` to your PC IP
+
+### Dashboard
+* Open `index.html`
+* Backend must be running
 
 ---
 
-## 📜 Disclaimer
+## 🛡️ Safety & Reliability
 
-This project demonstrates **architecture and integration**.
-It is **not claimed** to be an autonomous agronomy system.
+* Relay chatter prevented via hysteresis
+* Pump runtime hard-limited
+* Sensor faults lock actuation
+* Cloud failures cannot force unsafe behavior
+
+---
+
+## 📌 Disclaimer
+
+This project is a **production-grade showcase**, not an agricultural product.
+It demonstrates **architecture, safety, and reasoning**, not agronomic guarantees.
 
 ---
 
 ## 👤 Author
 
-Built as a **production-grade showcase** for AI + IoT system design.
+Built as a **serious engineering demonstration** of
+IoT + Agentic AI + Explainable Systems.
