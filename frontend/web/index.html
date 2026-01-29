@@ -3,7 +3,7 @@
 
 <head>
   <meta charset="UTF-8">
-  <title>AgriAgents – Intelligent Irrigation</title>
+  <title>AgriAgents – Multi-Agent Irrigation AI</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
   <style>
@@ -14,7 +14,7 @@
       --text: #0f172a;
       --muted: #64748b;
 
-      --soil: #3b82f6;
+      --field: #3b82f6;
       --climate: #0ea5e9;
       --decision: #16a34a;
       --warn: #dc2626;
@@ -32,7 +32,7 @@
       display: flex;
       justify-content: space-between;
       align-items: center;
-      margin-bottom: 24px;
+      margin-bottom: 20px;
     }
 
     h1 {
@@ -47,6 +47,25 @@
       border-radius: 999px;
       font-size: 0.75rem;
       font-weight: 600;
+    }
+
+    .controls {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 24px;
+    }
+
+    button {
+      padding: 8px 14px;
+      border-radius: 8px;
+      border: 1px solid var(--border);
+      background: white;
+      cursor: pointer;
+      font-weight: 600;
+    }
+
+    button:hover {
+      background: #f1f5f9;
     }
 
     .grid {
@@ -64,7 +83,7 @@
 
     .card h3 {
       margin: 0 0 12px 0;
-      font-size: 0.85rem;
+      font-size: 0.8rem;
       letter-spacing: 1px;
       text-transform: uppercase;
       color: var(--muted);
@@ -80,45 +99,24 @@
       color: var(--muted);
     }
 
-    /* Decision emphasis */
     .decision-card {
       grid-column: 1 / -1;
       border: 2px solid var(--decision);
     }
 
     .decision {
-      font-size: 2.8rem;
+      font-size: 2.6rem;
       font-weight: 900;
       color: var(--decision);
     }
 
-    /* Farmer Assistant */
     .assistant {
       background: #f1f5f9;
-      border-left: 4px solid var(--soil);
+      border-left: 4px solid var(--field);
       padding: 16px;
       border-radius: 10px;
       font-size: 0.95rem;
-    }
-
-    /* Scenario Buttons */
-    .controls {
-      display: flex;
-      gap: 10px;
-      margin-bottom: 20px;
-    }
-
-    button {
-      padding: 8px 14px;
-      border-radius: 8px;
-      border: 1px solid var(--border);
-      background: white;
-      cursor: pointer;
-      font-weight: 600;
-    }
-
-    button:hover {
-      background: #f1f5f9;
+      line-height: 1.5;
     }
   </style>
 </head>
@@ -126,11 +124,11 @@
 <body>
 
   <header>
-    <h1>🌱 AgriAgents – Intelligent Irrigation</h1>
+    <h1>🌱 AgriAgents – Multi-Agent Irrigation AI</h1>
     <div class="badge">SYSTEM ONLINE</div>
   </header>
 
-  <!-- DEMO CONTROLS -->
+  <!-- SCENARIO CONTROLS -->
   <div class="controls">
     <button onclick="setScenario('NORMAL')">💧 Normal</button>
     <button onclick="setScenario('RAIN')">🌧️ Rain Incoming</button>
@@ -139,36 +137,37 @@
 
   <div class="grid">
 
-    <!-- AGENT 1 -->
+    <!-- FIELD AGENT -->
     <div class="card">
-      <h3>🟫 Field Status Agent</h3>
+      <h3>🟫 Field Agent</h3>
       <div class="value" id="soil">--%</div>
-      <div class="sub">Soil Moisture</div>
+      <div class="sub" id="soil_status">Soil status: --</div>
       <div class="sub" id="temp">Temperature: -- °C</div>
       <div class="sub" id="pump">Pump: --</div>
     </div>
 
-    <!-- AGENT 2 -->
+    <!-- CLIMATE AGENT -->
     <div class="card">
-      <h3>🌦️ Climate Intelligence Agent</h3>
+      <h3>🌦️ Climate Agent</h3>
       <div class="value" id="rain">--</div>
       <div class="sub" id="eta">Rain ETA: --</div>
-      <div class="sub">Evaporation Risk: HIGH</div>
+      <div class="sub" id="evap">Evaporation Risk: --</div>
     </div>
 
-    <!-- AGENT 3 -->
+    <!-- DECISION AGENT -->
     <div class="card decision-card">
       <h3>🧠 Decision Agent</h3>
       <div class="decision" id="decision">WAITING</div>
       <div class="sub">Confidence: <span id="confidence">--%</span></div>
       <div class="sub">Utility Score: <span id="utility">--</span></div>
+      <div class="sub" id="reason">Reason: --</div>
     </div>
 
-    <!-- AGENT 4 -->
+    <!-- FARMER ASSISTANT -->
     <div class="card">
       <h3>🧑‍🌾 Farmer Assistant (AI)</h3>
       <div class="assistant" id="assistant">
-        Waiting for system insights…
+        Waiting for insights…
       </div>
     </div>
 
@@ -189,26 +188,35 @@
       try {
         const res = await fetch(API + "/state");
         const data = await res.json();
-        if (!data.sensors) return;
+        if (!data.agents || !data.agents.field_agent) return;
 
-        document.getElementById("soil").innerText = data.sensors.soil + "%";
-        document.getElementById("temp").innerText = "Temperature: " + data.sensors.temperature + " °C";
-        document.getElementById("pump").innerText = "Pump: " + (data.agent_analysis.decision === "IRRIGATE" ? "ON" : "OFF");
+        const field = data.agents.field_agent;
+        const climate = data.agents.climate_agent;
+        const decisionA = data.agents.decision_agent;
+        const farmer = data.agents.farmer_assistant;
 
-        document.getElementById("decision").innerText = data.agent_analysis.decision;
-        document.getElementById("confidence").innerText = Math.round(data.agent_analysis.confidence * 100) + "%";
-        document.getElementById("utility").innerText = data.agent_analysis.utility;
+        // FIELD AGENT
+        document.getElementById("soil").innerText = field.soil_moisture + "%";
+        document.getElementById("soil_status").innerText = "Soil status: " + field.soil_status;
+        document.getElementById("temp").innerText = "Temperature: " + field.temperature + " °C";
+        document.getElementById("pump").innerText = "Pump: " + field.pump_state;
 
-        // Climate agent
-        const hasRain = data.rain_forecast && !data.rain_forecast.includes("No rain");
-        document.getElementById("rain").innerText = hasRain ? "🌧️ YES" : "☀️ NO";
-        document.getElementById("eta").innerText = data.rain_forecast || "No rain expected";
+        // CLIMATE AGENT
+        document.getElementById("rain").innerText = climate.rain_expected ? "🌧️ YES" : "☀️ NO";
+        document.getElementById("eta").innerText = climate.rain_expected
+          ? "Rain ETA: " + (climate.rain_eta_minutes || 0) + " min"
+          : "Rain ETA: None";
+        document.getElementById("evap").innerText = "Evaporation Risk: " + climate.evaporation_risk;
 
-        // Farmer assistant
-        document.getElementById("assistant").innerText =
-          data.reason ? `${data.reason}. ${data.impact || ''}` :
-            data.crop_insight ||
-            "System is monitoring field and climate conditions.";
+        // DECISION AGENT
+        document.getElementById("decision").innerText = decisionA.decision;
+        document.getElementById("confidence").innerText = Math.round(decisionA.confidence * 100) + "%";
+        document.getElementById("utility").innerText = decisionA.utility_score;
+        document.getElementById("reason").innerText = "Reason: " + decisionA.reason;
+
+        // FARMER ASSISTANT
+        document.getElementById("assistant").innerText = farmer.message;
+
       } catch (e) {
         console.log("Backend unreachable");
       }
