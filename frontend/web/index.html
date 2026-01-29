@@ -118,6 +118,57 @@
       font-size: 0.95rem;
       line-height: 1.5;
     }
+
+    /* ================= AGENT INTERACTION FLOW ================= */
+    .flow {
+      margin-top: 30px;
+      padding: 20px;
+      background: #ffffff;
+      border: 1px dashed var(--border);
+      border-radius: 14px;
+    }
+
+    .flow-title {
+      font-size: 0.8rem;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      margin-bottom: 14px;
+    }
+
+    .flow-track {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .agent-node {
+      text-align: center;
+      font-weight: 600;
+    }
+
+    .agent-node span {
+      display: block;
+      font-size: 0.75rem;
+      color: var(--muted);
+    }
+
+    .flow-arrow {
+      font-size: 1.6rem;
+      transition: color 0.4s ease;
+    }
+
+    .flow-ok {
+      color: #16a34a;
+    }
+
+    .flow-warn {
+      color: #f59e0b;
+    }
+
+    .flow-block {
+      color: #dc2626;
+    }
   </style>
 </head>
 
@@ -173,6 +224,39 @@
 
   </div>
 
+  <!-- AGENT INTERACTION FLOW -->
+  <div class="flow">
+    <div class="flow-title">🔗 Agent Interaction & Reasoning Flow</div>
+
+    <div class="flow-track">
+      <div class="agent-node">
+        🟫 Field Agent
+        <span id="flow-field">--</span>
+      </div>
+
+      <div id="arrow-field-climate" class="flow-arrow">➜</div>
+
+      <div class="agent-node">
+        🌦️ Climate Agent
+        <span id="flow-climate">--</span>
+      </div>
+
+      <div id="arrow-climate-decision" class="flow-arrow">➜</div>
+
+      <div class="agent-node">
+        🧠 Decision Agent
+        <span id="flow-decision">--</span>
+      </div>
+
+      <div id="arrow-decision-farmer" class="flow-arrow">➜</div>
+
+      <div class="agent-node">
+        🧑‍🌾 Farmer Assistant
+        <span>Explanation</span>
+      </div>
+    </div>
+  </div>
+
   <script>
     let API = localStorage.getItem("agro_api") || "http://localhost:5000";
 
@@ -216,6 +300,40 @@
 
         // FARMER ASSISTANT
         document.getElementById("assistant").innerText = farmer.message;
+
+        // ================= AGENT INTERACTION LOGIC =================
+        const arrowFieldClimate = document.getElementById("arrow-field-climate");
+        const arrowClimateDecision = document.getElementById("arrow-climate-decision");
+        const arrowDecisionFarmer = document.getElementById("arrow-decision-farmer");
+
+        // Reset arrow colors
+        arrowFieldClimate.className = "flow-arrow";
+        arrowClimateDecision.className = "flow-arrow";
+        arrowDecisionFarmer.className = "flow-arrow";
+
+        // Update flow labels
+        document.getElementById("flow-field").innerText = field.soil_status;
+        document.getElementById("flow-climate").innerText = climate.rain_expected ? "Rain Detected" : "No Rain";
+        document.getElementById("flow-decision").innerText = decisionA.decision;
+
+        // Field → Climate (always ok)
+        if (field.soil_status === "CRITICAL" || field.soil_status === "LOW") {
+          arrowFieldClimate.classList.add("flow-warn");
+        } else {
+          arrowFieldClimate.classList.add("flow-ok");
+        }
+
+        // Climate → Decision (override detection)
+        if (climate.rain_expected && decisionA.decision === "HOLD") {
+          arrowClimateDecision.classList.add("flow-block");
+        } else if (decisionA.decision === "EMERGENCY_STOP") {
+          arrowClimateDecision.classList.add("flow-block");
+        } else {
+          arrowClimateDecision.classList.add("flow-ok");
+        }
+
+        // Decision → Farmer
+        arrowDecisionFarmer.classList.add("flow-ok");
 
       } catch (e) {
         console.log("Backend unreachable");
