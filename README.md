@@ -1,24 +1,30 @@
-# AgroSense AI 🌱  
-**Agentic AI–Driven Smart Irrigation (Production-Grade Showcase)**
+# 🌱 AgriAgents
+## Multi-Agent AI for Climate-Aware Irrigation
 
-AgroSense AI is a full-stack IoT + AI showcase that demonstrates how
-**edge safety logic**, **utility-based agentic reasoning**, and
-**explainable AI** can work together in a real hardware system.
+AgriAgents is a **production-style multi-agent AI system** for intelligent irrigation that reasons over **field conditions, upcoming climate events, and system health** to make safe, explainable decisions.
 
-This repository is intentionally designed to reflect
-**real-world engineering practices**, not tutorial code.
+Instead of relying on rigid thresholds, AgriAgents separates intelligence into **specialized AI agents**, each responsible for a specific aspect of farm decision-making.
 
 ---
 
-## 🎯 Project Objective
+## 🤖 Agent Architecture
 
-To demonstrate a **safe, explainable, and state-aware smart irrigation system** that:
+AgriAgents uses four explicit AI agents:
 
-- Collects live data from real sensors (ESP32)
-- Maintains a cloud-side **device shadow (digital twin)**
-- Uses **utility-based agentic AI** for decision-making
-- Explains every decision in human-readable form
-- Visualizes the system through a web dashboard
+| Agent | Responsibility |
+|------|----------------|
+| 🟫 Field Agent | Interprets real-time sensor conditions |
+| 🌦️ Climate Agent | Reasons about upcoming weather events |
+| 🧠 Decision Agent | Selects optimal actions using utility scoring |
+| 🧑‍🌾 Farmer Assistant | Explains decisions and provides guidance |
+
+This separation improves **safety, explainability, and extensibility**.
+
+---
+
+## 🎯 Core Value Proposition
+
+> **"AgriAgents prevents unnecessary irrigation by reasoning about future weather instead of blindly reacting to dry soil."**
 
 ---
 
@@ -30,21 +36,20 @@ ESP32 (Sensors + Relay)
 Telemetry (HTTP / JSON)
         ↓
 Backend Orchestrator (Flask)
-  • Device Shadow
-  • Agentic AI Engine
+  • Field Agent (sensor normalization)
+  • Climate Agent (weather reasoning)
+  • Decision Agent (utility scoring)
+  • Farmer Assistant (GenAI explanations)
         ↓
     Web Dashboard
-  • Live Data
-  • Decisions
-  • Explanations
+  • 4-Agent UI
+  • Live Decisions
+  • Explainable Reasoning
 ```
-
-This mirrors the **AWS IoT Core + Lambda + Device Shadow** pattern,
-implemented locally for demonstration.
 
 ---
 
-## 🔧 Hardware Used (Actual, Not Assumed)
+## 🔧 Hardware Used
 
 - ESP32
 - DHT11 (Temperature & Humidity)
@@ -52,82 +57,59 @@ implemented locally for demonstration.
 - LDR (Light Intensity)
 - Relay Module (Water Pump)
 
-> ⚠️ Note: Sensors are hobby-grade and used **only for demonstration**.
-The architecture supports industrial sensors without changes.
-
----
-
-## 🤖 AI Design (No Overclaim)
-
-### Edge Layer (ESP32)
-- Finite State Machine (FSM)
-- Hysteresis (prevents relay chatter)
-- Safety cutoff (max pump runtime)
-- Operates independently of the cloud
-
-### Agentic AI Layer (Backend)
-- Utility-based decision scoring
-- State-aware (uses time memory)
-- Avoids threshold-only logic
-- Produces confidence + reasoning trace
-
-### Explainability
-- Every decision is accompanied by:
-  - Utility score
-  - Confidence
-  - Human-readable explanation
-
-> Generative AI is used for **explanation**, not control.
+> ⚠️ Sensors are hobby-grade for demonstration. Architecture supports industrial sensors.
 
 ---
 
 ## 📂 Repository Structure
 
 ```
-firmware/
-└── esp32/
-    └── esp32_main.ino
-
-backend/
-└── server/
-    ├── server.py
-    └── agentic_engine.py
-
-frontend/
-└── web/
-    └── index.html   (next step)
-
-docs/
+agriagents/
+├── firmware/
+│   └── esp32/
+│       └── esp32_main.ino
+├── backend/
+│   └── server/
+│       ├── server.py
+│       ├── agentic_engine.py
+│       ├── demo_scenario.py
+│       └── requirements.txt
+├── frontend/
+│   └── web/
+│       └── index.html
+├── docs/
+├── .gitignore
+└── README.md
 ```
 
 ---
 
-## 🚀 How to Run (Local Demo)
+## 🚀 Quick Start
 
 ### Backend
 ```bash
 cd backend/server
-pip install flask flask-cors
+pip install -r requirements.txt
 python server.py
 ```
 
-### ESP32
-* Flash `esp32_main.ino`
-* Set WiFi credentials
-* Point `SERVER_URL` to your PC IP
+### Demo Scenario
+```bash
+python demo_scenario.py
+```
 
 ### Dashboard
-* Open `index.html`
-* Backend must be running
+Open `frontend/web/index.html` in your browser.
 
 ---
 
 ## 🛡️ Safety & Reliability
 
-* Relay chatter prevented via hysteresis
-* Pump runtime hard-limited
-* Sensor faults lock actuation
-* Cloud failures cannot force unsafe behavior
+- ✅ Edge-level FSM prevents unsafe actuation
+- ✅ Hysteresis prevents relay chatter
+- ✅ Pump runtime hard-limited
+- ✅ Sensor faults lock irrigation
+- ✅ Cloud failures cannot cause unsafe behavior
 
 ---
 
@@ -140,5 +122,4 @@ It demonstrates **architecture, safety, and reasoning**, not agronomic guarantee
 
 ## 👤 Author
 
-Built as a **serious engineering demonstration** of
-IoT + Agentic AI + Explainable Systems.
+Built as a **serious engineering demonstration** of Multi-Agent AI + IoT Systems.
